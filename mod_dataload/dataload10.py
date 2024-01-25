@@ -1,28 +1,17 @@
-    
-import warnings
-warnings.filterwarnings('ignore')
-
 #%matplotlib inline
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from scipy.stats import pearsonr, spearmanr
-from talib import RSI, BBANDS, MACD, ATR
+from mod_init import *
+from paths import path_assets01,path_assets00
 
 MONTH = 21
 YEAR = 12 * MONTH
 START = '2013-01-01'
 END = '2017-12-31'
- 
-sns.set_style('whitegrid')
-idx = pd.IndexSlice   
+   
     
 ohlcv = ['adj_open', 'adj_close', 'adj_low', 'adj_high', 'adj_volume']
     
-DATA_STORE = '../data/assets01.h5'  
+DATA_STORE = (path_assets01)  
 
 
 with pd.HDFStore(DATA_STORE) as store:
@@ -36,49 +25,41 @@ with pd.HDFStore(DATA_STORE) as store:
 
     stocks = (store['us_equities/stocks']
               .loc[:, ['marketcap', 'ipoyear', 'sector']])
-       
+
 # want at least 2 years of data
 min_obs = 2 * YEAR
 
 # have this much per ticker 
 nobs = prices.groupby(level='ticker').size()
-#print(nobs)
-#print(stocks)
 
 # keep those that exceed the limit
 keep = nobs[nobs > min_obs].index
 
 prices = prices.loc[idx[keep, :], :]
 
+#print(prices)
 stocks = stocks[~stocks.index.duplicated() & stocks.sector.notnull()]
 stocks.sector = stocks.sector.str.lower().str.replace(' ', '_')
 stocks.index.name = 'ticker'
 #print(stocks)
-#prices.info(show_counts=True)
 
-#print(prices.index.get_level_values('ticker').unique())
-#print(stocks.index.get_level_values('ticker').unique())
+#shared = (prices.index.get_level_values('ticker').unique()
+#          .intersection(stocks.index))
+#print(shared)
+#stocks = stocks.loc[shared, :]
+#prices = prices.loc[idx[shared, :], :]
 
-print("Índice de 'prices':")
-print(prices.index)
 
-print("\nÍndice de 'stocks':")
-print(stocks.index)
+# compute dollar volume to determine universe
+prices['dollar_vol'] = prices[['close', 'volume']].prod(axis=1)
+prices['dollar_vol_1m'] = (prices.dollar_vol.groupby('ticker')
+                           .rolling(window=21, level='date')
+                           .mean()).values
 
-shared = (prices.index.get_level_values('ticker').unique()
-          .intersection(stocks.index))
+prices.info(show_counts=True)
 
-print("Símbolos compartidos:")
-print(shared)
-stocks = stocks.loc[shared, :]
-prices = prices.loc[idx[shared, :], :]
-#print("DataFrame 'prices' después de cargar los datos:")
-#print(prices.head())
-#print("\nDataFrame 'stocks' después de cargar los datos:")
-#print(stocks.head())
-#prices.info(show_counts=True)
 
-#stocks.info(show_counts=True)
+
     
     
     
