@@ -20,6 +20,7 @@ idx = pd.IndexSlice
 import os
 import pandas as pd
 import numpy as np
+from numpy.linalg import LinAlgError
 import pandas_datareader.data as web
 from sklearn.datasets import fetch_openml
 
@@ -29,7 +30,18 @@ from io import BytesIO
 from zipfile import ZipFile, BadZipFile
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 from scipy.stats import pearsonr, spearmanr
 from talib import RSI, BBANDS, MACD, ATR
+
+
+#ARIMA
+from tqdm import tqdm
+from itertools import product
+
+
+import statsmodels.tsa.api as tsa
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.stattools import acf, q_stat, adfuller
+from scipy.stats import probplot, moment
+from sklearn.metrics import mean_squared_error
