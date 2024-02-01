@@ -123,7 +123,94 @@ plot_correlogram(best_arima_model.resid)
 
     
 
+sarimax_model = tsa.SARIMAX(endog=industrial_production_log_diff.dropna().values,
+                 order=(2, 0, 2),
+                 seasonal_order=(1, 0, 1, 12)).fit(start_params=[0, 0, 0, 0, 0, 0, 1]) 
+
+print(sarimax_model.summary())
+
+
+plot_correlogram(pd.Series(sarimax_model.resid))
+
+#SARIMAX
+l3 = list(range(3))
+l4 = list(range(4))
+params = [t for t in product(l4, l4, l3, l3) if t[0] > 0 and t[1] >  0]
+len(params)
+
+train_size = 120 # 10 years of training data
+results = {}
+test_set = industrial_production_log_diff.iloc[train_size:]
+
+for p1, q1, p2, q2 in tqdm(params):
+    preds = test_set.copy().to_frame('y_true').assign(y_pred=np.nan)
+    aic, bic = [], []
+    if p1 == 0 and q1 == 0:
+        continue
+    convergence_error = stationarity_error = 0
+    y_pred = []
+    for i, T in enumerate(range(train_size, len(industrial_production_log_diff))):
+        train_set = industrial_production_log_diff.iloc[T-train_size:T]
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                model = tsa.SARIMAX(endog=train_set.values,
+                                order=(p1, 0, q1),
+                                seasonal_order=(p2, 0, q2, 12)).fit(disp=0)
+        except LinAlgError:
+            convergence_error += 1
+        except ValueError:
+            stationarity_error += 1
+
+        preds.iloc[i, 1] = model.forecast(steps=1)[0]
+        aic.append(model.aic)
+        bic.append(model.bic)
+
+    preds.dropna(inplace=True)
+    mse = mean_squared_error(preds.y_true, preds.y_pred)
+    results[(p1, q1, p2, q2)] = [np.sqrt(mse),
+                                      preds.y_true.sub(preds.y_pred).pow(2).std(),
+                                      np.mean(aic),
+                                      np.std(aic),                                                  
+                                      np.mean(bic),
+                                      np.std(bic),                                                  
+                                      convergence_error,
+                                      stationarity_error]
     
+    
+sarimax_results = pd.DataFrame(results).T
+sarimax_results.columns = ['RMSE', 'RMSE_std', 'AIC', 'AIC_std', 'BIC', 'BIC_std', 'convergence', 'stationarity']
+sarimax_results['CV'] = sarimax_results.RMSE_std.div(sarimax_results.RMSE)
+sarimax_results.index.names = ['p1', 'q1', 'p2', 'q2']
+sarimax_results.info()
+
+with pd.HDFStore('arima.h5') as store:
+    store.put('sarimax', sarimax_results)
+    
+with pd.HDFStore('arima.h5') as store:
+    sarimax_results = store.get('sarimax')
+    
+sarimax_results.to_excel('sarimax_results.xlsx')
+    
+sarimax_results.nsmallest(5, columns='RMSE')
+
+sarimax_results[['RMSE', 'AIC', 'BIC']].sort_values('RMSE').head()
+
+sarimax_results[['RMSE', 'AIC', 'BIC']].corr('spearman')
+
+sns.jointplot(y='RMSE', x='BIC', data=sarimax_results[['RMSE', 'BIC']].rank());
+
+sarimax_results[(sarimax_results.RMSE < sarimax_results.RMSE.quantile(.05)) &
+                (sarimax_results.BIC < sarimax_results.BIC.quantile(.1))].sort_values('RMSE')
+
+p1, q1, p2, q2 = 2, 3, 1, 2
+
+best_model = tsa.SARIMAX(endog=industrial_production_log_diff.values, order=(p1, 0, q1),
+                         seasonal_order=(p2, 0, q2, 12)).fit()
+
+print(best_model.summary())
+
+
   
 
 

@@ -15,14 +15,14 @@ def plot_correlogram(x, lags=None, title=None):
     axes[0][0].set_title('Residuals')
     x.plot(ax=axes[0][0])
     x.rolling(21).mean().plot(ax=axes[0][0], c='k', lw=1)
-    axes[0][0].set_ylim(-0.25, 0.25)  # Ajuste del rango del eje y
+    axes[0][0].set_ylim(-0.05, 0.05)  # Ajuste del rango del eje y
     q_p = np.max(q_stat(acf(x, nlags=lags), len(x))[1])
     stats = f'Q-Stat: {np.max(q_p):>8.2f}\nADF: {adfuller(x)[1]:>11.2f}'
     axes[0][0].text(x=.02, y=.85, s=stats, transform=axes[0][0].transAxes)
     
     # Plotting Probability Plot
     probplot(x, plot=axes[0][1])
-    axes[0][1].set_ylim(-0.15, 0.15)  # Ajuste del rango del eje y
+    axes[0][1].set_ylim(-0.05, 0.05)  # Ajuste del rango del eje y
     
     # Plotting Moments Statistics
     mean, var, skew, kurtosis = moment(x, moment=[1, 2, 3, 4])
@@ -32,12 +32,12 @@ def plot_correlogram(x, lags=None, title=None):
     # Plotting Autocorrelation Function (ACF)
     plot_acf(x=x, lags=lags, zero=False, ax=axes[1][0])
     axes[1][0].set_xlabel('Lag')
-    axes[1][0].set_ylim(-0.075, 0.075)  # Ajuste del rango del eje y
+    axes[1][0].set_ylim(-0.4, 0.4)  # Ajuste del rango del eje y
     
     # Plotting Partial Autocorrelation Function (PACF)
     plot_pacf(x, lags=lags, zero=False, ax=axes[1][1])
     axes[1][1].set_xlabel('Lag')
-    axes[1][1].set_ylim(-0.075, 0.075)  # Ajuste del rango del eje y
+    axes[1][1].set_ylim(-0.4, 0.4)  # Ajuste del rango del eje y
     
     fig.suptitle(title, fontsize=14)
     sns.despine()
