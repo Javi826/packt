@@ -33,16 +33,14 @@ np.random.seed(seed=42)
 
 results_path = Path('results')
 if not results_path.exists():
-    results_path.mkdir()
-    
-    
+    results_path.mkdir()  
     
 # dataset params
-N = 50000
+N = 5000
 factor = 0.1
 noise = 0.1
 
-n_iterations = 50000
+n_iterations = 5000
 learning_rate = 0.0001
 momentum_factor = .5
 
@@ -58,9 +56,20 @@ Y = np.zeros((N, 2))
 for c in [0, 1]:
     Y[y == c, c] = 1
     
+# define outcome matrix
+Y = np.zeros((N, 2))
+for c in [0, 1]:
+    Y[y == c, c] = 1
+
+# Imprimir la matriz X
+print("Matriz X:")
+print(X)
+
+# Imprimir la matriz Y
+print("Matriz Y:")
+print(Y)
     
-    
-    
+   
 f'Shape of: X: {X.shape} | Y: {Y.shape} | y: {y.shape}'
 
 ax = sns.scatterplot(x=X[:, 0], 
@@ -109,7 +118,9 @@ def predict(data, hidden_weights, hidden_bias, output_weights, output_bias):
 
 def loss(y_hat, y_true):
     """Cross-entropy"""
-    return - (y_true * np.log(y_hat)).sum()
+    loss_value = - (y_true * np.log(y_hat)).sum()
+    print(f'Current loss value: {loss_value}')
+    return loss_value
 
 
 def loss_gradient(y_hat, y_true):
@@ -223,7 +234,7 @@ def update_params(param_list, Ms):
     # Ms = [MWh, Mbh, MWo, Mbo]
     return [P + M for P, M in zip(param_list, Ms)]
 
-def train_network(iterations=1000, lr=.01, mf=.1):
+def train_network(iterations=1000, lr=.01, mf=.1, print_interval=1000):
     # Initialize weights and biases
     param_list = list(initialize_weights())
 
@@ -232,12 +243,17 @@ def train_network(iterations=1000, lr=.01, mf=.1):
 
     train_loss = [loss(forward_prop(X, *param_list), Y)]
     for i in range(iterations):
-        if i % 1000 == 0: print(f'{i:,d}', end=' ', flush=True)
         # Update the moments and the parameters
         Ms = update_momentum(X, Y, param_list, Ms, mf, lr)
-
         param_list = update_params(param_list, Ms)
-        train_loss.append(loss(forward_prop(X, *param_list), Y))
+
+        # Calculate and append the current training loss
+        current_loss = loss(forward_prop(X, *param_list), Y)
+        train_loss.append(current_loss)
+
+        # Print the loss every print_interval iterations
+        if i % print_interval == 0:
+            print(f"Iteration {i}: Training Loss = {current_loss}")
 
     return param_list, train_loss
 
@@ -246,6 +262,23 @@ trained_params, train_loss = train_network(iterations=n_iterations,
                                            mf=momentum_factor)
 
 hidden_weights, hidden_bias, output_weights, output_bias = trained_params
+
+# Imprimir parámetros entrenados
+hidden_weights, hidden_bias, output_weights, output_bias = trained_params
+
+print("Parámetros entrenados:")
+print("Hidden Weights:\n", hidden_weights)
+print("Hidden Bias:\n", hidden_bias)
+print("Output Weights:\n", output_weights)
+print("Output Bias:\n", output_bias)
+
+# Obtener predicciones
+predictions = predict(X, *trained_params)
+
+# Imprimir resultados
+print("Comparación de Predicciones vs. Valores Reales:")
+for i in range(min(10, len(y))):
+    print(f"Sample {i+1}: y_true={y[i]}, y_pred={predictions[i]}")
 
 ax = pd.Series(train_loss).plot(figsize=(12, 3), title='Loss per Iteration', xlim=(0, n_iterations), logy=True)
 ax.set_xlabel('Iteration')
