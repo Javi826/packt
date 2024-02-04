@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Feb  2 20:02:30 2024
-
 @author: javi
 """
 
@@ -47,14 +46,13 @@ else:
     
 results_path = Path('results')
 if not results_path.exists():
-    results_path.mkdir() 
-    
+    results_path.mkdir()
+
+
 # dataset params
 N = 50000
 factor = 0.1
 noise = 0.1
-
-
 
 # generate data
 X, y = make_circles(
@@ -71,11 +69,14 @@ for c in [0, 1]:
 f'Shape of: X: {X.shape} | Y: {Y.shape} | y: {y.shape}'
 
 
-sns.scatterplot(x=X[:, 0], 
-                y=X[:, 1], 
-                hue=y,
-               style=y,
-               markers=['_', '+']);
+#sns.scatterplot(x=X[:, 0], 
+#                y=X[:, 1], 
+#                hue=y,
+#               style=y,
+#               markers=['_', '+']);
+
+# Definir valores de epochs a probar
+epochs_values = [1,2,3,4,5,6,7,8,9,10, 25, 50]
 
 model = Sequential([
     Dense(units=3, input_shape=(2,), name='hidden'),
@@ -83,58 +84,41 @@ model = Sequential([
     Dense(2, name='output'),
     Activation('softmax', name='softmax'),
 ])
-
-model.summary()
-
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['accuracy'])
-    
-tb_callback = TensorBoard(log_dir=results_path / 'tensorboard', 
-                          histogram_freq=1, 
-                          write_graph=True, 
-                          write_images=True)
-
-training=model.fit(X, 
-          Y, 
-          epochs=50,
-          validation_split=.2,
-          batch_size=128, 
-          verbose=1, 
-          callbacks=[tb_callback])
-
-fig, axes = plt.subplots(ncols=2, figsize=(14,4))
-pd.DataFrame(training.history)[['accuracy', 'val_accuracy']].plot(ax=axes[0])
-pd.DataFrame(training.history)[['loss', 'val_loss']].plot(ax=axes[1])
-sns.despine()
-fig.tight_layout();
-
-hidden = model.get_layer('hidden').get_weights()
-
-[t.shape for t in hidden]
-
-n_vals = 200
-x1 = np.linspace(-1.5, 1.5, num=n_vals)
-x2 = np.linspace(-1.5, 1.5, num=n_vals)
-xx, yy = np.meshgrid(x1, x2)  # create the grid
-
-X_ = np.array([xx.ravel(), yy.ravel()]).T
 
 
-y_hat = np.argmax(model.predict(X_), axis=1)
+# Almacenar las métricas de precisión para cada configuración de epochs
+accuracy_history = []
 
-# Create a color map to show the classification colors of each grid point
-cmap = ListedColormap([sns.xkcd_rgb["pale red"],
-                       sns.xkcd_rgb["denim blue"]])
+for epochs in epochs_values:
 
-# Plot the classification plane with decision boundary and input samples
-plt.contourf(xx, yy, y_hat.reshape(n_vals, -1), cmap=cmap, alpha=.25)
+    # Entrenar el modelo con el número de epochs actual
+    np.random.seed(42)
+    tf.random.set_seed(42)
+    training = model.fit(X, 
+                         Y, 
+                         epochs=epochs,
+                         validation_split=0.2,
+                         batch_size=128, 
+                         verbose=0)  # No imprimir detalles durante el entrenamiento
 
-# Plot both classes on the x1, x2 plane
-data = pd.DataFrame(X, columns=['$x_1$', '$x_2$']).assign(Class=pd.Series(y).map({0:'negative', 1:'positive'}))
-sns.scatterplot(x='$x_1$', y='$x_2$', hue='Class', data=data, style=y, markers=['_', '+'], legend=False)
-sns.despine()
-plt.title('Decision Boundary');
-    
+    # Almacenar la última precisión en la historia
+    accuracy_history.append(training.history['accuracy'][-1])
+    print(f'Última precisión después de {epochs} epochs: {accuracy_history[-1]}')
+
+# Visualizar la precisión en función del número de epochs
+plt.figure(figsize=(10, 6))
+plt.plot(epochs_values, accuracy_history, marker='o')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.title('Accuracy vs Number of Epochs')
+plt.grid(True)
+plt.show()
+
+
+
+
     
     
