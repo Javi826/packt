@@ -48,72 +48,58 @@ results_path = Path('results')
 if not results_path.exists():
     results_path.mkdir()
 
+# Lista de valores de batch_size a probar
+batch_size_values = [32, 64, 128, 256, 1024,2048,4000]
 
-# dataset params
-N = 50000
-factor = 0.1
-noise = 0.1
-
-# generate data
-X, y = make_circles(
-    n_samples=N,
-    shuffle=True,
-    factor=factor,
-    noise=noise)
-
-# define outcome matrix
-Y = np.zeros((N, 2))
-for c in [0, 1]:
-    Y[y == c, c] = 1
-    
-f'Shape of: X: {X.shape} | Y: {Y.shape} | y: {y.shape}'
-
-
-#sns.scatterplot(x=X[:, 0], 
-#                y=X[:, 1], 
-#                hue=y,
-#               style=y,
-#               markers=['_', '+']);
-
-# Definir valores de epochs a probar
-epochs_values = [1,2,3,4,5,6,7,8,9,10, 25, 50]
-
-model = Sequential([
-    Dense(units=3, input_shape=(2,), name='hidden'),
-    Activation('sigmoid', name='logistic'),
-    Dense(2, name='output'),
-    Activation('softmax', name='softmax'),
-])
-model.compile(optimizer='rmsprop',
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-
-
-# Almacenar las métricas de precisión para cada configuración de epochs
+# Almacenar las métricas de precisión para cada configuración de batch_size
 accuracy_history = []
 
-for epochs in epochs_values:
+for batch_size in batch_size_values:
+
+    # generate data for the current batch_size
+    X, y = make_circles(
+        n_samples=50000,
+        shuffle=True,
+        factor=0.1,
+        noise=0.1)
+
+    # define outcome matrix
+    Y = np.zeros((50000, 2))
+    for c in [0, 1]:
+        Y[y == c, c] = 1
+    
+    f'Shape of: X: {X.shape} | Y: {Y.shape} | y: {y.shape}'
+
+    model = Sequential([
+        Dense(units=3, input_shape=(2,), name='hidden'),
+        Activation('sigmoid', name='logistic'),
+        Dense(2, name='output'),
+        Activation('softmax', name='softmax'),
+    ])
+    model.compile(optimizer='rmsprop',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
 
     # Entrenar el modelo con el número de epochs actual
     np.random.seed(42)
     tf.random.set_seed(42)
     training = model.fit(X, 
                          Y, 
-                         epochs=epochs,
+                         epochs=50,
                          validation_split=0.2,
-                         batch_size=128, 
+                         batch_size=batch_size, 
                          verbose=0)  # No imprimir detalles durante el entrenamiento
 
     # Almacenar la última precisión en la historia
     accuracy_history.append(training.history['accuracy'][-1])
-    print(f'Última precisión después de {epochs} epochs: {accuracy_history[-1]}')
+    print(f'Última precisión para batch_size={batch_size}: {accuracy_history[-1]}')
 
-# Visualizar la precisión en función del número de epochs
+# Visualizar la precisión en función de los valores de batch_size
 plt.figure(figsize=(10, 6))
-plt.plot(epochs_values, accuracy_history, marker='o')
-plt.xlabel('Epochs')
+plt.plot(batch_size_values, accuracy_history, marker='o')
+plt.xlabel('Batch Size')
 plt.ylabel('Accuracy')
-plt.title('Accuracy vs Number of Epochs')
+plt.title('Accuracy vs Batch Size')
 plt.grid(True)
 plt.show()
 

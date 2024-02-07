@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Feb  3 09:00:46 2024
+Created on Mon Feb  5 22:08:02 2024
 
 @author: javi
 """
@@ -51,6 +51,7 @@ X, y = make_circles(
     factor=factor,
     noise=noise)
 
+
 X_tensor = torch.from_numpy(X)
 y_tensor = torch.from_numpy(y)
 
@@ -61,8 +62,6 @@ dataset = utils.TensorDataset(X_tensor,y_tensor)
 dataloader = utils.DataLoader(dataset,
                               batch_size=batch_size,
                               shuffle=True)
-
-print(dataset)
 
 class Net(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
@@ -80,18 +79,12 @@ class Net(nn.Module):
         out = self.softmax(out)
         return out
     
-    
-    
-    
 net = Net(input_size, hidden_size, num_classes)
 net
 
 pprint(list(net.parameters()))
 
-
 list(net.parameters())[0]
-
-# net.cuda()
 
 criterion = nn.CrossEntropyLoss()
 
@@ -117,6 +110,7 @@ for epoch in range(num_epochs):
         # Update the weights
         optimizer.step()
         
+
 liveloss = PlotLosses()
 for epoch in range(num_epochs):
     print(epoch)
@@ -151,8 +145,7 @@ for epoch in range(num_epochs):
         logs['accuracy'] = epoch_acc.item()
 
     liveloss.update(logs)
-    liveloss.draw() 
-    
+    liveloss.draw()        
 
 test_value = Variable(torch.from_numpy(X)).float()
 prediction = net(test_value).data.numpy()
@@ -169,7 +162,7 @@ xx, yy = np.meshgrid(x1, x2)  # create the grid
 X_test = np.array([xx.ravel(), yy.ravel()]).T
 X_test = torch.from_numpy(X_test)
 X_test.shape
-    
+
 zz = net(Variable(X_test).float()).data.numpy()
 zz.shape
 
@@ -184,10 +177,8 @@ plt.contourf(xx, yy, np.argmax(zz, axis=1).reshape(n_vals, -1), cmap=cmap, alpha
 data = pd.DataFrame(X, columns=['$x_1$', '$x_2$']).assign(Class=pd.Series(y).map({0:'negative', 1:'positive'}))
 sns.scatterplot(x='$x_1$', y='$x_2$', hue='Class', data=data, style=y, markers=['_', '+'], legend=False)
 plt.title('Decision Boundary');
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
