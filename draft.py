@@ -6,29 +6,33 @@ Created on Sun Feb  4 19:25:05 2024
 @author: javi
 """
 
-n_vals = 200
-x1 = np.linspace(-1.5, 1.5, num=n_vals)
-x2 = np.linspace(-1.5, 1.5, num=n_vals)
-xx, yy = np.meshgrid(x1, x2)  # create the grid
+X.shape
 
-X_ = np.array([xx.ravel(), yy.ravel()]).T
-
-
-y_hat = np.argmax(model.predict(X_), axis=1)
-
-# Create a color map to show the classification colors of each grid point
-cmap = ListedColormap([sns.xkcd_rgb["pale red"],
-                       sns.xkcd_rgb["denim blue"]])
-
-# Plot the classification plane with decision boundary and input samples
-plt.contourf(xx, yy, y_hat.reshape(n_vals, -1), cmap=cmap, alpha=.25)
-
-# Plot both classes on the x1, x2 plane
-data = pd.DataFrame(X, columns=['$x_1$', '$x_2$']).assign(Class=pd.Series(y).map({0:'negative', 1:'positive'}))
-sns.scatterplot(x='$x_1$', y='$x_2$', hue='Class', data=data, style=y, markers=['_', '+'], legend=False)
+ax = sp500_scaled.plot(lw=2, figsize=(14, 4), rot=0)
+ax.set_xlabel('')
 sns.despine()
-plt.title('Decision Boundary');
 
-#%load_ext tensorboard
+X_train = X[:'2018'].values.reshape(-1, window_size, 1)
+y_train = y[:'2018']
 
-#%tensorboard --logdir results/tensorboard/
+# keep the last year for testing
+X_test = X['2019'].values.reshape(-1, window_size, 1)
+y_test = y['2019']
+
+n_obs, window_size, n_features = X_train.shape
+
+y_train.shape
+
+rnn = Sequential([
+    LSTM(units=10, 
+         input_shape=(window_size, n_features), name='LSTM'),
+    Dense(1, name='Output')
+])
+
+optimizer = keras.optimizers.RMSprop(lr=0.001,
+                                     rho=0.9,
+                                     epsilon=1e-08,
+                                     decay=0.0)
+
+rnn.compile(loss='mean_squared_error', 
+            optimizer=optimizer)
