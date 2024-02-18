@@ -2,37 +2,26 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Feb  4 19:25:05 2024
-
 @author: javi
 """
+import numpy as np
+from tensorflow.keras.layers import Embedding
 
-X.shape
+# Supongamos que tienes 5 tickers únicos representados por números enteros
+num_unique_tickers = 5
 
-ax = sp500_scaled.plot(lw=2, figsize=(14, 4), rot=0)
-ax.set_xlabel('')
-sns.despine()
+# Supongamos que cada ticker se representa en un espacio vectorial de dimensión 5
+embedding_dim = 5
 
-X_train = X[:'2018'].values.reshape(-1, window_size, 1)
-y_train = y[:'2018']
+# Creamos un ejemplo de secuencia de tickers (números enteros)
+ticker_sequence = [2, 0, 3, 1, 4, 2]
 
-# keep the last year for testing
-X_test = X['2019'].values.reshape(-1, window_size, 1)
-y_test = y['2019']
+# Definimos la capa de embedding
+embedding_layer = Embedding(input_dim=num_unique_tickers, output_dim=embedding_dim)
 
-n_obs, window_size, n_features = X_train.shape
+# Aplicamos la capa de embedding a la secuencia de tickers
+embedded_sequence = embedding_layer(np.array(ticker_sequence))
 
-y_train.shape
-
-rnn = Sequential([
-    LSTM(units=10, 
-         input_shape=(window_size, n_features), name='LSTM'),
-    Dense(1, name='Output')
-])
-
-optimizer = keras.optimizers.RMSprop(lr=0.001,
-                                     rho=0.9,
-                                     epsilon=1e-08,
-                                     decay=0.0)
-
-rnn.compile(loss='mean_squared_error', 
-            optimizer=optimizer)
+# Visualizamos la secuencia original y la secuencia después de aplicar la capa de embedding
+print("Secuencia original de tickers:", ticker_sequence)
+print("Secuencia después de la capa de embedding:\n", embedded_sequence.numpy())

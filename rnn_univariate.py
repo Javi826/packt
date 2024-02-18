@@ -26,6 +26,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LSTM
 from tensorflow import keras
 
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -75,12 +76,7 @@ window_size = 63
 
 X, y = create_univariate_rnn_data(sp500_scaled, window_size=window_size)
 X.to_excel('datos_X.xlsx')
-#y.to_excel('datos_y.xlsx')
 
-#print(X.head())
-
-#print(y.head())
-#print(y.tail())
 
 axS = sp500_scaled.plot(lw=2, figsize=(14, 4), rot=0)
 axS.set_xlabel('')
@@ -105,7 +101,8 @@ rnn = Sequential([
     Dense(1, name='Output')
 ])
 
-rnn.summary()
+print(rnn.summary())
+
 
 # Usando la versión heredada del optimizador RMSprop
 optimizer = tf.keras.optimizers.legacy.RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
@@ -208,3 +205,30 @@ with sns.axes_style("white"):
 sns.despine()
 fig.tight_layout()
 fig.savefig(results_path / 'rnn_sp500_regression', dpi=300);
+
+train_predict_scaled = rnn.predict(X_train)
+test_predict_scaled = rnn.predict(X_test)
+
+train_ic = spearmanr(y_train, train_predict_scaled)[0]
+test_ic = spearmanr(y_test, test_predict_scaled)[0]
+
+print(f'Train IC: {train_ic:.4f} | Test IC: {test_ic:.4f}')
+
+#Calcula y imprime el RMSE
+train_rmse_scaled = np.sqrt(rnn.evaluate(X_train, y_train, verbose=0))
+test_rmse_scaled = np.sqrt(rnn.evaluate(X_test, y_test, verbose=0))
+
+print(f'Train RMSE: {train_rmse_scaled:.4f} | Test RMSE: {test_rmse_scaled:.4f}')
+
+predictions_df = pd.DataFrame(index=sp500.index)
+predictions_df['Train Predictions'] = train_predict
+predictions_df['Test Predictions'] = test_predict
+
+# Añadir las fechas reales y valores
+predictions_df['Real Dates'] = sp500.index
+predictions_df['Real Values'] = sp500['SP500'].values
+
+# Guardar el DataFrame en un archivo Excel
+predictions_df.to_excel(results_path / 'predictions.xlsx', index=False)
+
+
